@@ -18,7 +18,7 @@ MEANS = (104, 117, 123)
 voc300_active = {
     'num_classes': 21,
     'lr_steps': (80000, 100000, 120000),
-    'max_iter': 120000,
+    'max_iter': 10,
     'feature_maps': [38, 19, 10, 5, 3, 1],
     'min_dim': 300,
     'steps': [8, 16, 32, 64, 100, 300],
@@ -38,7 +38,7 @@ voc300_active = {
 coco300_active = {
     'num_classes': 81,
     'lr_steps': (80000, 100000, 120000),
-    'max_iter': 120000,
+    'max_iter': 10,
     'feature_maps': [38, 19, 10, 5, 3, 1],
     'min_dim': 300,
     'steps': [8, 16, 32, 64, 100, 300],
@@ -58,7 +58,7 @@ coco300_active = {
 voc300 = {
     'num_classes': 21,
     'lr_steps': (80000, 100000, 120000),
-    'max_iter': 120000,
+    'max_iter': 10,
     'feature_maps': [38, 19, 10, 5, 3, 1],
     'min_dim': 300,
     'steps': [8, 16, 32, 64, 100, 300],
@@ -74,7 +74,7 @@ voc300 = {
 voc512 = {
     'num_classes': 21,
     'lr_steps': (80000, 100000, 120000),
-    'max_iter': 120000,
+    'max_iter': 10,
     'feature_maps': [64, 32, 16, 8, 4, 2, 1],
     'min_dim': 512,
     'steps': [8, 16, 32, 64, 128, 256, 512],
@@ -90,7 +90,7 @@ voc512 = {
 coco = {
     'num_classes': 81,
     'lr_steps': (80000, 100000, 120000),
-    'max_iter': 120000,
+    'max_iter': 10,
     'feature_maps': [38, 19, 10, 5, 3, 1],
     'min_dim': 300,
     'steps': [8, 16, 32, 64, 100, 300],
