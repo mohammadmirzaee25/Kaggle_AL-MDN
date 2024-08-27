@@ -121,7 +121,7 @@ class RandomSaturation(object):
         assert self.lower >= 0, "contrast lower must be non-negative."
 
     def __call__(self, image, boxes=None, labels=None):
-        if random.randint(2):
+        if random.randint(0,1):
             image[:, :, 1] *= random.uniform(self.lower, self.upper)
 
         return image, boxes, labels
@@ -133,7 +133,7 @@ class RandomHue(object):
         self.delta = delta
 
     def __call__(self, image, boxes=None, labels=None):
-        if random.randint(2):
+        if random.randint(0,1):
             image[:, :, 0] += random.uniform(-self.delta, self.delta)
             image[:, :, 0][image[:, :, 0] > 360.0] -= 360.0
             image[:, :, 0][image[:, :, 0] < 0.0] += 360.0
@@ -142,15 +142,20 @@ class RandomHue(object):
 
 class RandomLightingNoise(object):
     def __init__(self):
-        self.perms = ((0, 1, 2), (0, 2, 1),
-                      (1, 0, 2), (1, 2, 0),
-                      (2, 0, 1), (2, 1, 0))
+        self.perms = (
+            (0, 1, 2), (0, 2, 1),
+            (1, 0, 2), (1, 2, 0),
+            (2, 0, 1), (2, 1, 0)
+        )
 
     def __call__(self, image, boxes=None, labels=None):
-        if random.randint(2):
-            swap = self.perms[random.randint(len(self.perms))]
-            shuffle = SwapChannels(swap)  # shuffle channels
-            image = shuffle(image)
+        # Randomly decide whether to apply lighting noise
+        if random.randint(0, 1):
+            # Select a random permutation from self.perms
+            swap_index = random.randint(0, len(self.perms) - 1)
+            swap = self.perms[swap_index]
+            shuffle = SwapChannels(swap)  # Shuffle channels
+            image = shuffle(image)  # Apply the shuffle
         return image, boxes, labels
 
 
@@ -178,7 +183,7 @@ class RandomContrast(object):
 
     # expects float image
     def __call__(self, image, boxes=None, labels=None):
-        if random.randint(2):
+        if random.randint(0,1):
             alpha = random.uniform(self.lower, self.upper)
             image *= alpha
         return image, boxes, labels
@@ -191,9 +196,10 @@ class RandomBrightness(object):
         self.delta = delta
 
     def __call__(self, image, boxes=None, labels=None):
-        if random.randint(2):
+        # Use random.randint(0, 1) to get a binary choice
+        if random.randint(0, 1):  # This will return either 0 or 1
             delta = random.uniform(-self.delta, self.delta)
-            image += delta
+            image = np.clip(image + delta, 0, 255)  # Clip to valid range
         return image, boxes, labels
 
 
@@ -207,108 +213,88 @@ class ToTensor(object):
         return torch.from_numpy(cvimage.astype(np.float32)).permute(2, 0, 1), boxes, labels
 
 
-class RandomSampleCrop(object):
-    """Crop
-    Arguments:
-        img (Image): the image being input during training
-        boxes (Tensor): the original bounding boxes in pt form
-        labels (Tensor): the class labels for each bbox
-        mode (float tuple): the min and max jaccard overlaps
-    Return:
-        (img, boxes, classes)
-            img (Image): the cropped image
-            boxes (Tensor): the adjusted bounding boxes in pt form
-            labels (Tensor): the class labels for each bbox
-    """
+import numpy as np
+import random
+
+class YourAugmentationClass:
     def __init__(self):
-        self.sample_options = (
-            # using entire original input image
-            None,
-            # sample a patch s.t. MIN jaccard w/ obj in .1,.3,.4,.7,.9
-            (0.1, None),
-            (0.3, None),
-            (0.7, None),
-            (0.9, None),
-            # randomly sample a patch
-            (None, None),
-        )
+        # Sample options (modify these as needed)
+        self.sample_options = [None, (0.1, None), (0.3, None), (0.7, None), (0.9, None), (None, None)]
 
     def __call__(self, image, boxes=None, labels=None):
         height, width, _ = image.shape
+        
         while True:
-            # randomly choose a mode
-            mode = random.choice(self.sample_options)
-            if mode is None:
-                return image, boxes, labels
+            # Print sample options for debugging
+            print(self.sample_options)
+            # print("SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
+            # Filter out None values from sample options
+            valid_options = [option for option in self.sample_options if option is not None]
+
+            # Choose a mode from valid options
+            mode = random.choice(valid_options)
+
+            # Handle the selected mode
             min_iou, max_iou = mode
+
             if min_iou is None:
                 min_iou = float('-inf')
             if max_iou is None:
                 max_iou = float('inf')
 
-            # max trails (50)
+            # Max trials (50)
             for _ in range(50):
-                current_image = image
+                current_image = image.copy()  # Use a copy to preserve the original
 
+                # Generate random width and height for the crop
                 w = random.uniform(0.3 * width, width)
                 h = random.uniform(0.3 * height, height)
 
-                # aspect ratio constraint b/t .5 & 2
+                # Aspect ratio constraint b/t .5 & 2
                 if h / w < 0.5 or h / w > 2:
                     continue
 
-                left = random.uniform(width - w)
-                top = random.uniform(height - h)
+                left = random.uniform(0, width - w)
+                top = random.uniform(0, height - h)
 
-                # convert to integer rect x1,y1,x2,y2
-                rect = np.array([int(left), int(top), int(left+w), int(top+h)])
+                # Convert to integer rect x1,y1,x2,y2
+                rect = np.array([int(left), int(top), int(left + w), int(top + h)])
 
-                # calculate IoU (jaccard overlap) b/t the cropped and gt boxes
+                # Calculate IoU (Jaccard overlap) b/t the cropped area and ground truth boxes
                 overlap = jaccard_numpy(boxes, rect)
 
-                # is min and max overlap constraint satisfied? if not try again
-                if overlap.min() < min_iou and max_iou < overlap.max():
+                # Check if IoU constraints are satisfied
+                if overlap.min() < min_iou or overlap.max() > max_iou:
                     continue
 
-                # cut the crop from the image
-                current_image = current_image[rect[1]:rect[3], rect[0]:rect[2],
-                                              :]
+                # Cut the crop from the image
+                current_image = current_image[rect[1]:rect[3], rect[0]:rect[2], :]
 
-                # keep overlap with gt box IF center in sampled patch
+                # Centers of the ground truth boxes
                 centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
 
-                # mask in all gt boxes that above and to the left of centers
-                m1 = (rect[0] < centers[:, 0]) * (rect[1] < centers[:, 1])
+                # Masks to find valid boxes based on center location
+                m1 = (rect[0] < centers[:, 0]) & (rect[1] < centers[:, 1])
+                m2 = (rect[2] > centers[:, 0]) & (rect[3] > centers[:, 1])
+                mask = m1 & m2
 
-                # mask in all gt boxes that under and to the right of centers
-                m2 = (rect[2] > centers[:, 0]) * (rect[3] > centers[:, 1])
-
-                # mask in that both m1 and m2 are true
-                mask = m1 * m2
-
-                # have any valid boxes? try again if not
+                # Check for valid boxes
                 if not mask.any():
                     continue
 
-                # take only matching gt boxes
+                # Take only matching gt boxes and labels
                 current_boxes = boxes[mask, :].copy()
-
-                # take only matching gt labels
                 current_labels = labels[mask]
 
-                # should we use the box left and top corner or the crop's
-                current_boxes[:, :2] = np.maximum(current_boxes[:, :2],
-                                                  rect[:2])
-                # adjust to crop (by substracting crop's left,top)
+                # Adjust the boxes according to the crop
+                current_boxes[:, :2] = np.maximum(current_boxes[:, :2], rect[:2])
                 current_boxes[:, :2] -= rect[:2]
-
-                current_boxes[:, 2:] = np.minimum(current_boxes[:, 2:],
-                                                  rect[2:])
-                # adjust to crop (by substracting crop's left,top)
+                current_boxes[:, 2:] = np.minimum(current_boxes[:, 2:], rect[2:])
                 current_boxes[:, 2:] -= rect[:2]
 
                 return current_image, current_boxes, current_labels
+
 
 
 class Expand(object):
@@ -316,7 +302,7 @@ class Expand(object):
         self.mean = mean
 
     def __call__(self, image, boxes, labels):
-        if random.randint(2):
+        if random.randint(0,1):
             return image, boxes, labels
 
         height, width, depth = image.shape
@@ -342,7 +328,7 @@ class Expand(object):
 class RandomMirror(object):
     def __call__(self, image, boxes, classes):
         _, width, _ = image.shape
-        if random.randint(2):
+        if random.randint(0,1):
             image = image[:, ::-1]
             boxes = boxes.copy()
             boxes[:, 0::2] = width - boxes[:, 2::-2]
@@ -391,7 +377,7 @@ class PhotometricDistort(object):
     def __call__(self, image, boxes, labels):
         im = image.copy()
         im, boxes, labels = self.rand_brightness(im, boxes, labels)
-        if random.randint(2):
+        if random.randint(0,1):
             distort = Compose(self.pd[:-1])
         else:
             distort = Compose(self.pd[1:])
@@ -408,7 +394,7 @@ class SSDAugmentation(object):
             ToAbsoluteCoords(),
             PhotometricDistort(),
             Expand(self.mean),
-            RandomSampleCrop(),
+            # RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),
             Resize(self.size),
