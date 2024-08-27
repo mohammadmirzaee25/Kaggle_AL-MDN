@@ -267,7 +267,8 @@ def train(
                 print('loss: %.4f , loss_c: %.4f , loss_l: %.4f , lr : %.4f\n' % (
                       loss.data, loss_c.data, loss_l.data, float(optimizer.param_groups[0]['lr'])))
 
-            if iteration != 0 and (iteration + 1) % 10000 == 0:
+            # if iteration != 0 and (iteration + 1) % 10000 == 0:
+            if iteration != 0 and (iteration + 1) % 2 == 0:
                 print('Saving state, iter:', iteration)
                 torch.save(net.state_dict(), 'weights/ssd300_AL_' + cfg['name'] + '_id_' + str(args.id) +
                            '_num_labels_' + str(len(labeled_set)) + '_' + repr(iteration + 1) + '.pth')
@@ -285,13 +286,17 @@ def main():
     supervised_dataset, supervised_data_loader, unsupervised_dataset, unsupervised_data_loader, indices, labeled_set, unlabeled_set = create_loaders()
     criterion = MultiBoxLoss_GMM(cfg['num_classes'], 0.5, True, 0, True, 3, 0.5, False, args.cuda)
     print(len(labeled_set), len(unlabeled_set))
+    print("first traininggggggggggggggggggg")
     net = train(labeled_set, supervised_data_loader, indices, cfg, criterion)
+    print("end traininggggggggggggggggggg")
 
     # # active learning loop
     for i in range(cfg['num_cycles']):
         if cfg['name'] == 'VOC':
             # select the best weight
-            list_iter = ['90000', '100000', '110000', '120000']
+            # list_iter = ['90000', '100000', '110000', '120000']
+            list_iter = ['2', '4', '6', '8']
+
             list_weights = []
             for loop in list_iter:
                 name = 'weights/ssd300_AL_' + cfg['name'] + '_id_' + str(args.id) + '_num_labels_' + str(len(labeled_set)) + '_' + loop + '.pth'
