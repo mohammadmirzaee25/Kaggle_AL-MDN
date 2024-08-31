@@ -268,7 +268,7 @@ def train(
                       loss.data, loss_c.data, loss_l.data, float(optimizer.param_groups[0]['lr'])))
 
             # if iteration != 0 and (iteration + 1) % 10000 == 0:
-            if iteration != 0 and (iteration + 1) % 2 == 0:
+            if iteration != 0 and (iteration + 1) % 100 == 0:
                 print('Saving state, iter:', iteration)
                 torch.save(net.state_dict(), 'weights/ssd300_AL_' + cfg['name'] + '_id_' + str(args.id) +
                            '_num_labels_' + str(len(labeled_set)) + '_' + repr(iteration + 1) + '.pth')
