@@ -322,8 +322,10 @@ def main():
             print('loading best weight {}...'.format(best_weight))
             net.load_state_dict(torch.load(best_weight))
 
-        net.eval()
+        #no need to eval because we use last iter as best weight
+        # net.eval()
         batch_iterator = iter(unsupervised_data_loader)
+        print("active learning scycle , *************************************************)
         labeled_set, unlabeled_set = active_learning_cycle(
             batch_iterator,
             labeled_set,
