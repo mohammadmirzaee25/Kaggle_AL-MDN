@@ -295,7 +295,7 @@ def main():
         if cfg['name'] == 'VOC':
             # select the best weight
             # list_iter = ['90000', '100000', '110000', '120000']
-            list_iter = [2000]
+            list_iter = ['2000']
 
             list_weights = []
             for loop in list_iter:
